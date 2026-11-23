@@ -54,7 +54,7 @@ export function App() {
   const addLog = (agent: SwarmLog['agent'], message: string) => {
     const time = new Date().toTimeString().split(' ')[0];
     const newLog: SwarmLog = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       timestamp: time,
       agent,
       message,

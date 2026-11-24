@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, ExternalLink, RefreshCw } from 'lucide-react';
+import { Shield, RefreshCw, ExternalLink, Sparkles } from 'lucide-react';
 import type { ProjectProfile } from '../types/grant';
 
 interface NavbarProps {
@@ -16,56 +16,73 @@ export const Navbar: React.FC<NavbarProps> = ({
   isRefreshing,
 }) => {
   return (
-    <header className="border-b border-white/[0.08] bg-[#0A0D12] px-6 py-3.5 sticky top-0 z-50">
-      <div className="max-w-[1520px] mx-auto flex items-center justify-between">
+    <header className="border-b border-white/[0.08] bg-[#0A0D12]/90 backdrop-blur-md px-4 sm:px-6 py-3 sticky top-0 z-50 transition-all">
+      <div className="max-w-[1520px] mx-auto flex items-center justify-between gap-3">
         
         {/* Brand identity */}
-        <div className="flex items-center space-x-3.5">
-          <div className="flex items-center space-x-2 text-white">
-            <div className="w-7 h-7 rounded-lg bg-[#00DC82]/10 border border-[#00DC82]/30 flex items-center justify-center text-[#00DC82]">
+        <div className="flex items-center space-x-3 shrink-0">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#00DC82]/25 to-[#00DC82]/5 border border-[#00DC82]/40 flex items-center justify-center text-[#00DC82] shadow-[0_0_15px_rgba(0,220,130,0.15)]">
               <Shield className="w-4 h-4" />
             </div>
-            <span className="text-base font-bold tracking-tight">GrantHunter</span>
+            <div className="flex flex-col">
+              <div className="flex items-center space-x-1.5">
+                <span className="text-base font-extrabold tracking-tight text-white font-sans">GrantHunter</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#00DC82]/15 text-[#00DC82] border border-[#00DC82]/25">
+                  AI
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-medium hidden sm:inline leading-none mt-0.5">
+                Autonomous Capital Matrix
+              </span>
+            </div>
           </div>
 
-          <span className="text-slate-600 text-xs">/</span>
+          <span className="text-slate-700 text-sm hidden sm:inline">•</span>
 
+          {/* Quick Target Profile Button */}
           <button
             onClick={onOpenProfile}
-            className="flex items-center space-x-2 px-3 py-1 rounded-md bg-[#11141A] border border-white/[0.08] hover:border-white/20 transition cursor-pointer text-xs"
+            title="Click to switch or edit target project profile"
+            className="flex items-center space-x-2 px-2.5 sm:px-3 py-1 rounded-lg bg-[#12161F] hover:bg-[#181E2A] border border-white/[0.08] hover:border-white/20 transition cursor-pointer text-xs group"
           >
-            <span className="text-slate-400 font-mono text-[11px]">project:</span>
-            <span className="font-semibold text-slate-100">{profile.name}</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#00DC82]" />
+            <span className="text-slate-400 font-sans text-xs hidden md:inline">Project:</span>
+            <span className="font-semibold text-slate-200 group-hover:text-white truncate max-w-[120px] sm:max-w-[180px]">
+              {profile.name}
+            </span>
+            <span className="w-2 h-2 rounded-full bg-[#00DC82] animate-pulse shrink-0" />
           </button>
         </div>
 
-        {/* Center: Real Status Ticker */}
-        <div className="hidden md:flex items-center space-x-3 text-xs font-mono text-slate-400">
-          <div className="flex items-center space-x-1.5">
+        {/* Center: Live DoraHacks Status Ticker (Desktop only) */}
+        <div className="hidden lg:flex items-center space-x-3 text-xs text-slate-400 bg-[#0E121A] px-3.5 py-1.5 rounded-full border border-white/[0.06]">
+          <div className="flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-[#00DC82]" />
-            <span className="text-slate-200 font-medium">DoraHacks BUIDL API Sync Active</span>
+            <span className="text-slate-200 font-semibold">DoraHacks BUIDL Sync Active</span>
           </div>
           <span className="text-slate-700">•</span>
-          <span className="text-slate-400">Anna AI Track Verified</span>
+          <div className="flex items-center space-x-1 text-[#38BDF8]">
+            <Sparkles className="w-3 h-3" />
+            <span>Anna AI Builder Verified</span>
+          </div>
         </div>
 
-        {/* Right Actions */}
-        <div className="flex items-center space-x-2.5 text-xs font-mono">
+        {/* Right Actions Suite */}
+        <div className="flex items-center space-x-2 sm:space-x-2.5 text-xs shrink-0">
           <button
             onClick={onRefreshFeed}
             disabled={isRefreshing}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md bg-[#11141A] hover:bg-[#161A22] text-slate-300 hover:text-white border border-white/[0.08] transition cursor-pointer disabled:opacity-50"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#12161F] hover:bg-[#181E2A] text-slate-200 hover:text-white border border-white/[0.08] transition cursor-pointer disabled:opacity-50 font-medium"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#00DC82]' : ''}`} />
-            <span>{isRefreshing ? 'Scanning...' : 'Sync Grants'}</span>
+            <RefreshCw className={`w-3.5 h-3.5 text-[#00DC82] ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{isRefreshing ? 'Scanning...' : 'Sync Grants'}</span>
           </button>
 
           <a
             href="https://dorahacks.io/build"
             target="_blank"
             rel="noreferrer"
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-md bg-[#00DC82] hover:bg-[#00c776] text-[#07090C] font-semibold transition shadow-sm"
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-[#00DC82] hover:bg-[#00c776] text-[#07090C] font-bold transition shadow-[0_2px_12px_rgba(0,220,130,0.25)] hover:shadow-[0_4px_16px_rgba(0,220,130,0.4)]"
           >
             <span>Submit BUIDL</span>
             <ExternalLink className="w-3.5 h-3.5" />

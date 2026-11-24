@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { ProjectProfile } from '../types/grant';
-import { FolderGit2, Check } from 'lucide-react';
+import { FolderGit2, Check, X } from 'lucide-react';
 
 interface ProjectProfileModalProps {
   isOpen: boolean;
@@ -65,86 +65,93 @@ export const ProjectProfileModal: React.FC<ProjectProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#08090B]/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-[#0E1015] w-full max-w-lg rounded-xl p-6 border border-white/[0.08] shadow-2xl space-y-4">
+    <div className="fixed inset-0 z-50 bg-[#07090C]/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-fadeIn">
+      <div className="bg-[#0E121A] w-full max-w-lg rounded-2xl p-5 sm:p-6 border border-white/[0.1] shadow-2xl space-y-4">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-          <div className="flex items-center space-x-2">
-            <FolderGit2 className="w-4 h-4 text-[#00DC82]" />
-            <h3 className="font-semibold text-white text-sm font-mono">
-              Target Project & Tech Stack Profile
-            </h3>
+        <div className="flex items-center justify-between border-b border-white/[0.08] pb-3.5">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#00DC82]/15 text-[#00DC82] border border-[#00DC82]/30 flex items-center justify-center">
+              <FolderGit2 className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-white text-base">
+                Target Project & Tech Stack Profile
+              </h3>
+              <p className="text-xs text-slate-400">
+                Customizes matching algorithms and proposal drafts
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-xs cursor-pointer p-1"
+            className="text-slate-400 hover:text-white transition p-1.5 rounded-lg hover:bg-white/[0.06] cursor-pointer"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Preset choices */}
         <div>
-          <label className="block text-slate-400 text-xs font-mono mb-1.5">
-            Quick Project Presets:
+          <label className="block text-slate-300 text-xs font-semibold mb-2">
+            Quick Architecture Presets:
           </label>
-          <div className="grid grid-cols-3 gap-2 text-[11px] font-mono">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {presets.map((p) => (
               <button
                 key={p.name}
                 onClick={() => handleSelectPreset(p)}
-                className={`p-2.5 rounded-lg text-left border transition cursor-pointer ${
+                className={`p-3 rounded-xl text-left border transition cursor-pointer ${
                   name === p.name
-                    ? 'bg-[#181C24] text-white border-[#00DC82]/50 font-semibold'
-                    : 'bg-[#13161C] text-slate-400 border-white/[0.06] hover:text-white'
+                    ? 'bg-[#18202D] text-white border-[#00DC82]/60 shadow-sm'
+                    : 'bg-[#121620] text-slate-400 border-white/[0.06] hover:text-white hover:border-white/[0.15]'
                 }`}
               >
-                <div className="truncate font-sans font-medium">{p.name}</div>
-                <div className="text-[9px] text-slate-500 mt-0.5">{p.category}</div>
+                <div className="truncate font-semibold text-xs text-white">{p.name}</div>
+                <div className="text-[11px] text-slate-400 mt-0.5 truncate">{p.category}</div>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Inputs */}
-        <div className="space-y-3 text-xs font-mono">
+        {/* Inputs Form */}
+        <div className="space-y-3.5 text-xs">
           <div>
-            <label className="block text-slate-400 mb-1">Project Name</label>
+            <label className="block text-slate-300 font-semibold mb-1">Project Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-[#13161C] border border-white/[0.08] text-white focus:outline-none focus:border-[#00DC82] font-sans"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#121620] border border-white/[0.08] text-white focus:outline-none focus:border-[#00DC82] text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-slate-400 mb-1">Tagline / Mission</label>
+            <label className="block text-slate-300 font-semibold mb-1">Tagline / Mission Thesis</label>
             <input
               type="text"
               value={tagline}
               onChange={(e) => setTagline(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-[#13161C] border border-white/[0.08] text-white focus:outline-none focus:border-[#00DC82] font-sans"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#121620] border border-white/[0.08] text-white focus:outline-none focus:border-[#00DC82] text-xs sm:text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-slate-400 mb-1">Tech Stack (comma separated)</label>
+            <label className="block text-slate-300 font-semibold mb-1">Tech Stack (comma separated)</label>
             <input
               type="text"
               value={stack}
               onChange={(e) => setStack(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-[#13161C] border border-white/[0.08] text-white focus:outline-none focus:border-[#00DC82] font-sans"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#121620] border border-white/[0.08] text-white focus:outline-none focus:border-[#00DC82] text-xs sm:text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-slate-400 mb-1">Primary Ecosystem Category</label>
+            <label className="block text-slate-300 font-semibold mb-1">Primary Ecosystem Category</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-[#13161C] border border-white/[0.08] text-white focus:outline-none focus:border-[#00DC82] font-sans"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#121620] border border-white/[0.08] text-white focus:outline-none focus:border-[#00DC82] text-xs sm:text-sm"
             >
               <option value="AI-Native Productivity">AI-Native Productivity & Workflows</option>
               <option value="Developer Tools">Developer Tools & Infrastructure</option>
@@ -153,20 +160,20 @@ export const ProjectProfileModal: React.FC<ProjectProfileModalProps> = ({
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="pt-2 flex justify-end space-x-2 text-xs font-mono">
+        {/* Action Buttons */}
+        <div className="pt-2 flex items-center justify-end space-x-2.5 text-xs">
           <button
             onClick={onClose}
-            className="px-3.5 py-1.5 rounded-md bg-[#13161C] text-slate-400 hover:text-white transition cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-[#141924] text-slate-300 hover:text-white transition cursor-pointer font-semibold"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-3.5 py-1.5 rounded-md bg-[#00DC82] hover:bg-[#00c776] text-[#08090B] font-semibold transition cursor-pointer flex items-center space-x-1"
+            className="px-4 py-2 rounded-xl bg-[#00DC82] hover:bg-[#00c776] text-[#07090C] font-bold transition cursor-pointer flex items-center space-x-1.5 shadow-[0_2px_10px_rgba(0,220,130,0.25)]"
           >
             <Check className="w-3.5 h-3.5" />
-            <span>Save Profile</span>
+            <span>Save & Recalculate</span>
           </button>
         </div>
 

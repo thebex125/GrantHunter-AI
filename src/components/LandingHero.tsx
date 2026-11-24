@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import type { ProjectProfile, GrantOpportunity } from '../types/grant';
 import {
   Sparkles,
   ArrowRight,
@@ -9,14 +10,19 @@ import {
   Zap,
   CheckCircle2
 } from 'lucide-react';
+import { BackgroundGrid } from './ui/BackgroundGrid';
 
-interface LandingHeroProps {
+export interface LandingHeroProps {
   onLaunchStudio: () => void;
+  profile?: ProjectProfile;
+  topGrant?: GrantOpportunity | null;
+  onSelectPreset?: (newProfile: ProjectProfile) => void;
+  onOpenProfileModal?: () => void;
 }
 
 export const LandingHero: React.FC<LandingHeroProps> = ({ onLaunchStudio }) => {
   return (
-    <section className="relative overflow-hidden pt-12 sm:pt-20 pb-12 sm:pb-16 text-center">
+    <BackgroundGrid className="pt-12 sm:pt-20 pb-12 sm:pb-16 text-center">
       {/* Background ambient radial glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] sm:w-[900px] h-[450px] bg-gradient-to-tr from-[#00DC82]/15 via-cyan-500/10 to-transparent blur-[140px] pointer-events-none rounded-full" />
 
@@ -180,6 +186,6 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onLaunchStudio }) => {
         </motion.div>
 
       </div>
-    </section>
+    </BackgroundGrid>
   );
 };

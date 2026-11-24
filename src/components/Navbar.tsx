@@ -1,11 +1,21 @@
 import React from 'react';
-import { Shield, RefreshCw, ExternalLink, Sparkles, LayoutDashboard, ArrowLeft, ArrowRight, SlidersHorizontal } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  Compass,
+  RefreshCw,
+  ArrowUpRight,
+  SlidersHorizontal,
+  Layers,
+  LayoutGrid,
+} from 'lucide-react';
 import type { ProjectProfile } from '../types/grant';
 
 interface NavbarProps {
   profile: ProjectProfile;
   currentView?: 'landing' | 'studio';
   onToggleView?: (view: 'landing' | 'studio') => void;
+  totalGrants?: number;
+  totalPoolFormatted?: string;
   onOpenProfile: () => void;
   onRefreshFeed: () => void;
   isRefreshing: boolean;
@@ -15,127 +25,129 @@ export const Navbar: React.FC<NavbarProps> = ({
   profile,
   currentView = 'landing',
   onToggleView,
+  totalGrants = 6,
+  totalPoolFormatted = '$136,000',
   onOpenProfile,
   onRefreshFeed,
   isRefreshing,
 }) => {
+  const navTabs = [
+    { id: 'landing', label: 'Architecture & Bento', icon: Layers },
+    { id: 'studio', label: 'Proposal Workbench', icon: LayoutGrid },
+  ] as const;
+
   return (
-    <header className="border-b border-white/[0.08] bg-[#0A0D12]/90 backdrop-blur-md px-4 sm:px-6 py-3 sticky top-0 z-50 transition-all">
-      <div className="max-w-[1520px] mx-auto flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-50 h-14 border-b border-zinc-800/80 bg-[#09090B]/80 backdrop-blur-xl px-4 sm:px-6 flex items-center">
+      <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between gap-3">
         
-        {/* Brand identity */}
-        <div className="flex items-center space-x-3 shrink-0">
-          <div
+        {/* Left: Brand Identity & Project Context Switcher */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <button
+            type="button"
             onClick={() => onToggleView?.('landing')}
-            className="flex items-center space-x-2.5 cursor-pointer group"
+            className="flex items-center gap-2.5 cursor-pointer group shrink-0"
           >
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#00DC82]/25 to-[#00DC82]/5 border border-[#00DC82]/40 flex items-center justify-center text-[#00DC82] shadow-[0_0_15px_rgba(0,220,130,0.15)] group-hover:scale-105 transition-transform">
-              <Shield className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-xl bg-zinc-900 border border-zinc-700/80 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)] flex items-center justify-center text-zinc-100 group-hover:border-emerald-500/60 transition-colors">
+              <Compass className="w-4 h-4 text-emerald-400" />
             </div>
-            <div className="flex flex-col">
-              <div className="flex items-center space-x-1.5">
-                <span className="text-base font-extrabold tracking-tight text-white font-sans">
-                  GrantHunter
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#00DC82]/15 text-[#00DC82] border border-[#00DC82]/25">
-                  AI
-                </span>
-              </div>
-              <span className="text-[10px] text-slate-400 font-medium hidden sm:inline leading-none mt-0.5">
-                Autonomous Capital Matrix
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-bold tracking-tight text-zinc-100">
+                GrantHunter
+              </span>
+              <span className="text-[10px] font-code font-semibold px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">
+                v2.4
               </span>
             </div>
-          </div>
+          </button>
 
-          <span className="text-slate-700 text-sm hidden sm:inline">•</span>
+          <span className="text-zinc-700 text-sm select-none hidden sm:inline">/</span>
 
-          {/* Quick Navigation Toggle */}
-          {currentView === 'studio' ? (
-            <button
-              onClick={() => onToggleView?.('landing')}
-              className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-[#141924] hover:bg-[#1C2333] border border-white/[0.08] hover:border-white/20 text-slate-300 hover:text-white transition text-xs cursor-pointer font-medium"
-            >
-              <ArrowLeft className="w-3.5 h-3.5 text-[#00DC82]" />
-              <span className="hidden sm:inline">Overview</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => onToggleView?.('studio')}
-              className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-[#141924] hover:bg-[#1C2333] border border-white/[0.08] hover:border-white/20 text-slate-300 hover:text-white transition text-xs cursor-pointer font-medium"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5 text-[#00DC82]" />
-              <span>Studio</span>
-            </button>
-          )}
-
-          {/* Quick Target Profile Button (visible in studio) */}
-          {currentView === 'studio' && (
-            <button
-              onClick={onOpenProfile}
-              title="Click to switch or edit target project profile"
-              className="flex items-center space-x-2 px-2.5 sm:px-3 py-1 rounded-lg bg-[#12161F] hover:bg-[#181E2A] border border-white/[0.08] hover:border-white/20 transition cursor-pointer text-xs group"
-            >
-              <span className="text-slate-400 font-sans text-xs hidden md:inline">Project:</span>
-              <span className="font-semibold text-slate-200 group-hover:text-white truncate max-w-[120px] sm:max-w-[160px]">
-                {profile.name}
-              </span>
-              <span className="w-2 h-2 rounded-full bg-[#00DC82] animate-pulse shrink-0" />
-            </button>
-          )}
+          {/* Active Project Context Pill (Manus / Linear style) */}
+          <button
+            type="button"
+            onClick={onOpenProfile}
+            title="Configure active project stack & vector parameters"
+            className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-zinc-900/90 hover:bg-zinc-800/80 border border-zinc-800/90 hover:border-zinc-700 transition text-xs cursor-pointer group min-w-0"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+            <span className="font-semibold text-zinc-200 truncate max-w-[140px]">
+              {profile.name}
+            </span>
+            <span className="hidden xl:inline-block px-1.5 py-0.5 rounded bg-zinc-950 text-zinc-400 font-code text-[10.5px] border border-zinc-800">
+              {profile.category}
+            </span>
+            <SlidersHorizontal className="w-3 h-3 text-zinc-500 group-hover:text-zinc-300 shrink-0" />
+          </button>
         </div>
 
-        {/* Center: Live DoraHacks Status Ticker (Desktop only) */}
-        <div className="hidden lg:flex items-center space-x-3 text-xs text-slate-400 bg-[#0E121A] px-3.5 py-1.5 rounded-full border border-white/[0.06]">
-          <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-[#00DC82] animate-pulse" />
-            <span className="text-slate-200 font-semibold">DoraHacks BUIDL Sync Active</span>
-          </div>
-          <span className="text-slate-700">•</span>
-          <div className="flex items-center space-x-1 text-cyan-400">
-            <Sparkles className="w-3 h-3" />
-            <span>Anna AI Builder Verified</span>
-          </div>
-        </div>
-
-        {/* Right Actions Suite */}
-        <div className="flex items-center space-x-2 sm:space-x-2.5 text-xs shrink-0">
-          {currentView === 'studio' ? (
-            <>
+        {/* Center: Motion.dev Shared-Layout Spring Pill Dock (Manus AI inspired) */}
+        <nav className="flex items-center p-1 rounded-xl bg-zinc-900/90 border border-zinc-800/90 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
+          {navTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = currentView === tab.id;
+            return (
               <button
-                onClick={onRefreshFeed}
-                disabled={isRefreshing}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#12161F] hover:bg-[#181E2A] text-slate-200 hover:text-white border border-white/[0.08] transition cursor-pointer disabled:opacity-50 font-medium"
+                key={tab.id}
+                type="button"
+                onClick={() => onToggleView?.(tab.id)}
+                className="relative px-3 sm:px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 rounded-lg"
               >
-                <RefreshCw className={`w-3.5 h-3.5 text-[#00DC82] ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">{isRefreshing ? 'Scanning...' : 'Sync Grants'}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="navbar-mode-pill"
+                    transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                    className="absolute inset-0 rounded-lg bg-zinc-100 shadow-xs"
+                  />
+                )}
+                <Icon
+                  className={`w-3.5 h-3.5 relative z-10 transition-colors ${
+                    isActive ? 'text-zinc-950' : 'text-zinc-400'
+                  }`}
+                />
+                <span
+                  className={`relative z-10 transition-colors ${
+                    isActive ? 'text-zinc-950 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  {tab.label}
+                </span>
               </button>
+            );
+          })}
+        </nav>
 
-              <button
-                onClick={onOpenProfile}
-                className="hidden md:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#12161F] hover:bg-[#181E2A] text-slate-200 hover:text-white border border-white/[0.08] transition cursor-pointer font-medium"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
-                <span>Profile</span>
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => onToggleView?.('studio')}
-              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-[#00DC82] hover:bg-[#00c776] text-[#07090C] font-extrabold transition shadow-[0_2px_12px_rgba(0,220,130,0.25)] hover:shadow-[0_4px_16px_rgba(0,220,130,0.4)] cursor-pointer"
-            >
-              <span>Launch Studio</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          )}
+        {/* Right: Telemetry Counters & Actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden lg:flex items-center gap-2.5 text-xs text-zinc-400 mr-1 font-code">
+            <span>
+              <strong className="text-zinc-200">{totalGrants}</strong> feeds
+            </span>
+            <span className="text-zinc-700">•</span>
+            <span>
+              <strong className="text-emerald-400">{totalPoolFormatted}</strong> pool
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={onRefreshFeed}
+            disabled={isRefreshing}
+            title="Re-run Scout Harvester & Vector Matcher"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-medium transition cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-emerald-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden md:inline">{isRefreshing ? 'Syncing' : 'Sync'}</span>
+          </button>
 
           <a
             href="https://dorahacks.io/build"
             target="_blank"
             rel="noreferrer"
-            className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#141924] hover:bg-[#1C2333] text-slate-300 hover:text-white border border-white/[0.08] font-semibold transition"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-bold transition shadow-xs"
           >
-            <span>DoraHacks</span>
-            <ExternalLink className="w-3 h-3 text-slate-400" />
+            <span className="hidden sm:inline">Submit BUIDL</span>
+            <span className="sm:hidden">BUIDL</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
           </a>
         </div>
 

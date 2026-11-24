@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { ProjectProfile } from '../types/grant';
 import { FolderGit2, Check, X } from 'lucide-react';
 
@@ -19,6 +20,13 @@ export const ProjectProfileModal: React.FC<ProjectProfileModalProps> = ({
   const [stack, setStack] = useState(currentProfile.stack);
   const [category, setCategory] = useState(currentProfile.category);
   const [tagline, setTagline] = useState(currentProfile.tagline);
+
+  useEffect(() => {
+    setName(currentProfile.name);
+    setStack(currentProfile.stack);
+    setCategory(currentProfile.category);
+    setTagline(currentProfile.tagline);
+  }, [currentProfile]);
 
   const presets = [
     {
@@ -44,8 +52,6 @@ export const ProjectProfileModal: React.FC<ProjectProfileModalProps> = ({
     },
   ];
 
-  if (!isOpen) return null;
-
   const handleSelectPreset = (p: typeof presets[0]) => {
     setName(p.name);
     setStack(p.stack);
@@ -65,123 +71,140 @@ export const ProjectProfileModal: React.FC<ProjectProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6">
-      <div className="bg-white w-full max-w-lg rounded-xl p-5 sm:p-6 border border-slate-200 shadow-xl space-y-4">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 pb-3.5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-800 border border-slate-200 flex items-center justify-center">
-              <FolderGit2 className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-sm sm:text-base">
-                Project Profile & Tech Stack
-              </h3>
-              <p className="text-xs text-slate-500">
-                Updates fit scoring and regenerates tailored grant proposals
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 transition p-1 rounded-md hover:bg-slate-100 cursor-pointer"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 sm:p-6"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 8 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+            className="relative bg-[#111114] w-full max-w-lg rounded-2xl p-5 sm:p-6 border border-zinc-800 shadow-2xl space-y-4 overflow-hidden"
           >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+            {/* Obsidian UI 1px top specular highlight */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
 
-        {/* Preset choices */}
-        <div>
-          <label className="block text-slate-600 text-xs font-semibold mb-2">
-            Quick Architecture Presets
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {presets.map((p) => (
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-zinc-900 text-emerald-400 border border-zinc-800 flex items-center justify-center">
+                  <FolderGit2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-zinc-100 text-sm sm:text-base">
+                    Project Profile & Vector Parameters
+                  </h3>
+                  <p className="text-xs text-zinc-400">
+                    Recalculates cosine fit scores and compiles tailored grant dossiers
+                  </p>
+                </div>
+              </div>
               <button
-                key={p.name}
-                onClick={() => handleSelectPreset(p)}
-                className={`p-2.5 rounded-lg text-left border transition cursor-pointer ${
-                  name === p.name
-                    ? 'bg-slate-900 text-white border-slate-900'
-                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
-                }`}
+                type="button"
+                onClick={onClose}
+                className="text-zinc-500 hover:text-zinc-200 transition p-1 rounded-lg hover:bg-zinc-900 cursor-pointer"
               >
-                <div className={`truncate font-semibold text-xs ${name === p.name ? 'text-white' : 'text-slate-900'}`}>
-                  {p.name}
-                </div>
-                <div className={`text-[11px] mt-0.5 truncate ${name === p.name ? 'text-slate-300' : 'text-slate-500'}`}>
-                  {p.category}
-                </div>
+                <X className="w-4 h-4" />
               </button>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* Inputs Form */}
-        <div className="space-y-3 text-xs">
-          <div>
-            <label className="block text-slate-700 font-semibold mb-1">Project Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-slate-900 text-sm"
-            />
-          </div>
+            {/* Preset choices */}
+            <div>
+              <label className="block text-zinc-400 text-xs font-code uppercase tracking-wider mb-2">
+                Architecture Presets
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {presets.map((p) => (
+                  <button
+                    key={p.name}
+                    type="button"
+                    onClick={() => handleSelectPreset(p)}
+                    className={`p-2.5 rounded-xl text-left border transition cursor-pointer ${
+                      name === p.name
+                        ? 'bg-zinc-800/90 text-zinc-100 border-emerald-500/50'
+                        : 'bg-zinc-950/70 text-zinc-400 border-zinc-800/80 hover:bg-zinc-900 hover:text-zinc-200'
+                    }`}
+                  >
+                    <div className="truncate font-semibold text-xs text-zinc-100">{p.name}</div>
+                    <div className="text-[10.5px] font-code text-zinc-400 mt-0.5 truncate">{p.category}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-slate-700 font-semibold mb-1">Tagline / Value Proposition</label>
-            <input
-              type="text"
-              value={tagline}
-              onChange={(e) => setTagline(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-slate-900 text-xs sm:text-sm"
-            />
-          </div>
+            {/* Inputs Form */}
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-zinc-300 font-semibold mb-1">Project Name</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-100 focus:outline-none focus:border-zinc-500 text-sm"
+                />
+              </div>
 
-          <div>
-            <label className="block text-slate-700 font-semibold mb-1">Tech Stack (comma-separated)</label>
-            <input
-              type="text"
-              value={stack}
-              onChange={(e) => setStack(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-slate-900 text-xs sm:text-sm font-code"
-            />
-          </div>
+              <div>
+                <label className="block text-zinc-300 font-semibold mb-1">Tagline / Value Proposition</label>
+                <input
+                  type="text"
+                  value={tagline}
+                  onChange={(e) => setTagline(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-100 focus:outline-none focus:border-zinc-500 text-xs sm:text-sm"
+                />
+              </div>
 
-          <div>
-            <label className="block text-slate-700 font-semibold mb-1">Primary Ecosystem Track</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-slate-900 text-xs sm:text-sm"
-            >
-              <option value="AI-Native Productivity">AI-Native Productivity & Workflows</option>
-              <option value="Developer Tools">Developer Tools & Infrastructure</option>
-              <option value="Web3 & DeFi">Web3 & Decentralized Apps</option>
-            </select>
-          </div>
-        </div>
+              <div>
+                <label className="block text-zinc-300 font-semibold mb-1">Tech Stack (comma-separated)</label>
+                <input
+                  type="text"
+                  value={stack}
+                  onChange={(e) => setStack(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-100 focus:outline-none focus:border-zinc-500 text-xs sm:text-sm font-code"
+                />
+              </div>
 
-        {/* Action Buttons */}
-        <div className="pt-2 flex items-center justify-end gap-2 text-xs">
-          <button
-            onClick={onClose}
-            className="px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition cursor-pointer font-medium"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold transition cursor-pointer flex items-center gap-1.5"
-          >
-            <Check className="w-3.5 h-3.5" />
-            <span>Save & Recalculate</span>
-          </button>
-        </div>
+              <div>
+                <label className="block text-zinc-300 font-semibold mb-1">Primary Ecosystem Track</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-100 focus:outline-none focus:border-zinc-500 text-xs sm:text-sm"
+                >
+                  <option value="AI-Native Productivity">AI-Native Productivity & Workflows</option>
+                  <option value="Developer Tools">Developer Tools & Infrastructure</option>
+                  <option value="Web3 & DeFi">Web3 & Decentralized Apps</option>
+                </select>
+              </div>
+            </div>
 
-      </div>
-    </div>
+            {/* Action Buttons */}
+            <div className="pt-2 flex items-center justify-end gap-2 text-xs">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3.5 py-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white transition cursor-pointer font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                className="px-4 py-2 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-bold transition cursor-pointer flex items-center gap-1.5"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Save & Recalculate</span>
+              </button>
+            </div>
+
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

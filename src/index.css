@@ -7,21 +7,20 @@
 
 :root {
   --bg-page: #07090C;
-  --bg-surface: #0E1116;
-  --bg-surface-elevated: #141820;
-  --bg-card: #11141A;
-  --bg-card-hover: #161A22;
-  --bg-card-active: #191E28;
+  --bg-surface: #0E121A;
+  --bg-subtle: #141924;
   
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(255, 255, 255, 0.14);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
   
   --text-main: #EDEDF0;
-  --text-muted: #8E94A0;
-  --text-dim: #5B616E;
+  --text-body: #94A3B8;
+  --text-muted: #64748B;
+  --text-dim: #475569;
   
-  --brand-mint: #00DC82;
-  --brand-mint-subtle: rgba(0, 220, 130, 0.12);
+  --brand-primary: #00DC82;
+  --brand-emerald: #00DC82;
+  --brand-amber: #F59E0B;
 }
 
 * {
@@ -32,29 +31,28 @@ body {
   font-family: var(--font-sans);
   background-color: var(--bg-page);
   color: var(--text-main);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Monospace font utility */
 .font-code {
   font-family: var(--font-mono);
   letter-spacing: -0.02em;
 }
 
-/* Subtle scrollbar */
+/* Subtle modern scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-page);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1E232F;
-  border-radius: 3px;
+  background: rgba(100, 116, 139, 0.22);
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2C3446;
+  background: rgba(100, 116, 139, 0.4);
 }

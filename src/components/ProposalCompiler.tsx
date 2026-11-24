@@ -5,22 +5,69 @@ import { JuryCriticService } from '../services/juryCritic';
 import {
   Copy,
   Download,
-  ExternalLink,
+  ArrowUpRight,
   Check,
-  Eye,
+  FileText,
   Edit3,
-  ShieldCheck,
-  CheckCircle2,
-  Sparkles,
-  AlertCircle,
+  Scale,
   RotateCcw,
-  TrendingUp
 } from 'lucide-react';
 
 interface ProposalCompilerProps {
   grant: GrantOpportunity | null;
   profile?: ProjectProfile;
   onUpdateProposal?: (proposal: GrantProposal) => void;
+}
+
+interface ParsedBudgetRow {
+  item: string;
+  amountFormatted: string;
+  numericValue: number;
+  percentage: number;
+}
+
+function parseBudgetRows(rawBudget: string): { rows: ParsedBudgetRow[]; totalFormatted: string } {
+  const segments = rawBudget
+    .split(/[•|;\n]/)
+    .map((s) => s.trim().replace(/\.$/, ''))
+    .filter(Boolean);
+
+  const extracted = segments.map((seg) => {
+    const match = seg.match(/^(\$[\d,]+(?:\.\d+)?[kK]?)\s+(.+)$/);
+    if (match) {
+      const amountStr = match[1];
+      const label = match[2];
+      let num = parseFloat(amountStr.replace(/[$,kK]/g, '')) || 0;
+      if (amountStr.toLowerCase().endsWith('k')) num *= 1000;
+      return { item: label, amountFormatted: amountStr, numericValue: num };
+    }
+    return { item: seg, amountFormatted: 'Included', numericValue: 0 };
+  });
+
+  const total = extracted.reduce((acc, r) => acc + r.numericValue, 0);
+  const rows: ParsedBudgetRow[] = extracted.map((r) => ({
+    ...r,
+    percentage: total > 0 ? Math.round((r.numericValue / total) * 100) : 0,
+  }));
+
+  return {
+    rows,
+    totalFormatted: total > 0 ? `$${total.toLocaleString('en-US')} USD` : 'Allocated per Pool',
+  };
+}
+
+function parseMilestone(raw: string, idx: number): { phase: string; deliverable: string } {
+  const colonIdx = raw.indexOf(':');
+  if (colonIdx !== -1 && colonIdx < 42) {
+    return {
+      phase: raw.slice(0, colonIdx).trim(),
+      deliverable: raw.slice(colonIdx + 1).trim(),
+    };
+  }
+  return {
+    phase: `Phase 0${idx + 1}`,
+    deliverable: raw,
+  };
 }
 
 export const ProposalCompiler: React.FC<ProposalCompilerProps> = ({
@@ -31,7 +78,6 @@ export const ProposalCompiler: React.FC<ProposalCompilerProps> = ({
   const [activeTab, setActiveTab] = useState<'preview' | 'edit' | 'audit'>('preview');
   const [copied, setCopied] = useState(false);
 
-  // In-place editable state
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
   const [problem, setProblem] = useState('');
@@ -50,7 +96,6 @@ export const ProposalCompiler: React.FC<ProposalCompilerProps> = ({
     }
   }, [grant]);
 
-  // Construct current live proposal object
   const currentProposal: GrantProposal = useMemo(() => ({
     title,
     summary,
@@ -60,26 +105,32 @@ export const ProposalCompiler: React.FC<ProposalCompilerProps> = ({
     budget
   }), [title, summary, problem, architecture, milestones, budget]);
 
-  // Generate live red-team audit report with JuryCriticService
   const auditReport = useMemo(() => {
     if (!grant) return null;
     const activeProfile: ProjectProfile = profile || {
-      name: 'GrantHunter Builder',
-      tagline: 'Autonomous Grant Intelligence Matrix',
-      stack: 'React 19, TypeScript, Tailwind CSS, Anna OS',
+      name: 'AutoBrief AI',
+      tagline: 'Autonomous Meeting Intelligence & Execution Matrix',
+      stack: 'React 18, TypeScript, Tailwind CSS, Anna AI OS',
       category: 'AI-Native Productivity',
       stage: 'Working MVP / Production-Ready'
     };
     return JuryCriticService.auditProposal(currentProposal, grant, activeProfile);
   }, [currentProposal, grant, profile]);
 
+  const parsedBudget = useMemo(() => parseBudgetRows(budget), [budget]);
+
+  const stackList = useMemo(() => {
+    if (!profile?.stack) return [];
+    return profile.stack.split(',').map((s) => s.trim()).filter(Boolean);
+  }, [profile]);
+
   if (!grant) {
     return (
-      <div className="bg-[#0B0E14] border border-white/[0.08] rounded-2xl lg:h-[calc(100vh-220px)] flex flex-col items-center justify-center text-center p-8 text-slate-400">
-        <AlertCircle className="w-8 h-8 text-slate-500 mb-3 opacity-60" />
-        <h3 className="text-base font-bold text-white mb-1">No Grant Selected</h3>
-        <p className="text-xs sm:text-sm text-slate-400 max-w-sm">
-          Select an opportunity from the feed on the left to compile and inspect its custom proposal draft.
+      <div className="bg-white border border-slate-200 rounded-xl lg:h-[calc(100vh-88px)] flex flex-col items-center justify-center text-center p-8">
+        <FileText className="w-6 h-6 text-slate-300 mb-2" />
+        <h3 className="text-sm font-semibold text-slate-800">No Grant Program Selected</h3>
+        <p className="text-xs text-slate-500 max-w-xs mt-1">
+          Choose an opportunity from the list on the left to review and customize its technical proposal.
         </p>
       </div>
     );
@@ -124,115 +175,109 @@ export const ProposalCompiler: React.FC<ProposalCompilerProps> = ({
   };
 
   return (
-    <div className="bg-[#0B0E14] border border-white/[0.08] rounded-2xl flex flex-col lg:h-[calc(100vh-220px)] shadow-xl overflow-hidden transition-all">
+    <div className="bg-white border border-slate-200 rounded-xl flex flex-col lg:h-[calc(100vh-88px)] shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden">
       
-      {/* Top Workstation Header Bar */}
-      <div className="px-5 sm:px-6 py-4 border-b border-white/[0.08] bg-[#0E121A]/80 backdrop-blur-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+      {/* Top Document Toolbar */}
+      <div className="px-4 sm:px-6 py-3 border-b border-slate-200 bg-slate-50/70 flex flex-wrap items-center justify-between gap-3">
         
-        {/* Target Grant Meta */}
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Target Grant:
-            </span>
-            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-              {grant.title}
-            </h2>
-            <span className="px-2 py-0.5 rounded-md bg-[#00DC82]/15 text-[#00DC82] border border-[#00DC82]/30 font-bold text-xs">
-              {grant.fitScore}% Fit
-            </span>
-          </div>
-
-          <div className="text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-2">
-            <span>Host: <strong className="text-slate-200">{grant.host}</strong></span>
-            <span>•</span>
-            <span>Pool: <strong className="text-[#00DC82]">{grant.pool}</strong></span>
-            <span>•</span>
-            <span>Deadline: <strong className="text-slate-200">{grant.deadline}</strong></span>
-          </div>
+        {/* Left: Breadcrumb & Match Summary */}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">
+            {grant.host}
+          </span>
+          <span className="text-slate-300">/</span>
+          <span className="text-xs font-semibold text-slate-900 truncate">
+            {grant.title}
+          </span>
+          <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-code font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            {grant.fitScore}% match
+          </span>
         </div>
 
-        {/* View Switcher & Action Tools */}
-        <div className="flex items-center space-x-2 shrink-0">
+        {/* Right: Mode Switcher & Export Actions */}
+        <div className="flex items-center gap-2 ml-auto">
           
-          {/* Tab buttons */}
-          <div className="flex items-center p-1 rounded-xl bg-[#141924] border border-white/[0.08] text-xs">
+          {/* View Tabs */}
+          <div className="flex items-center p-0.5 rounded-lg bg-slate-200/75 text-xs">
             <button
               onClick={() => setActiveTab('preview')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition font-semibold cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition font-medium cursor-pointer ${
                 activeTab === 'preview'
-                  ? 'bg-[#00DC82] text-[#07090C] shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-xs font-semibold'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Eye className="w-3.5 h-3.5" />
-              <span>Preview</span>
+              <FileText className="w-3.5 h-3.5" />
+              <span>Document</span>
             </button>
             <button
               onClick={() => setActiveTab('edit')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition font-semibold cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition font-medium cursor-pointer ${
                 activeTab === 'edit'
-                  ? 'bg-[#00DC82] text-[#07090C] shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-xs font-semibold'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Edit3 className="w-3.5 h-3.5" />
-              <span>Editor</span>
+              <span>Edit</span>
             </button>
             <button
               onClick={() => setActiveTab('audit')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition font-semibold cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition font-medium cursor-pointer ${
                 activeTab === 'audit'
-                  ? 'bg-[#00DC82] text-[#07090C] shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-slate-900 shadow-xs font-semibold'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Jury Audit</span>
+              <Scale className="w-3.5 h-3.5" />
+              <span>Rubric ({auditReport?.overallScore || 92})</span>
             </button>
           </div>
 
-          {/* Quick Copy / Download */}
-          <div className="flex items-center space-x-1.5">
-            <button
-              onClick={handleCopy}
-              title="Copy Full Proposal Markdown (Ctrl+C)"
-              className="p-2 rounded-xl bg-[#141924] hover:bg-[#1C2333] border border-white/[0.08] hover:border-white/20 text-slate-300 hover:text-white transition cursor-pointer"
-            >
-              {copied ? <Check className="w-4 h-4 text-[#00DC82]" /> : <Copy className="w-4 h-4" />}
-            </button>
+          {/* Export Buttons */}
+          <button
+            onClick={handleCopy}
+            title="Copy Markdown to Clipboard"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium transition cursor-pointer"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-emerald-700 font-semibold">Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5 text-slate-500" />
+                <span className="hidden sm:inline">Copy .md</span>
+              </>
+            )}
+          </button>
 
-            <button
-              onClick={handleDownload}
-              title="Download as Markdown File"
-              className="p-2 rounded-xl bg-[#141924] hover:bg-[#1C2333] border border-white/[0.08] hover:border-white/20 text-slate-300 hover:text-white transition cursor-pointer"
-            >
-              <Download className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            onClick={handleDownload}
+            title="Download Markdown File"
+            className="p-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 transition cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+          </button>
 
         </div>
-
       </div>
 
-      {/* Main Tab Content Area */}
-      <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6">
+      {/* Main Document Canvas */}
+      <div className="flex-1 overflow-y-auto">
         
-        {/* Tab 1: Structured Preview */}
+        {/* TAB 1: EDITORIAL PROPOSAL DOCUMENT */}
         {activeTab === 'preview' && (
-          <div className="max-w-3xl mx-auto space-y-6">
+          <article className="max-w-[780px] mx-auto px-5 sm:px-10 py-7 sm:py-9 space-y-8">
             
-            {/* Header / Title Card */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-[#0E121A] border border-white/[0.08] relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
-                    <Sparkles className="w-3 h-3 text-[#00DC82]" />
-                    <span>DoraHacks BUIDL Proposal Draft</span>
-                  </span>
-                  <h1 className="text-lg sm:text-xl font-bold text-white leading-snug">
-                    {title}
-                  </h1>
+            {/* Dossier Header */}
+            <header className="space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                  <span>Grant Application Specification</span>
+                  <span>•</span>
+                  <span>Applicant: <strong className="text-slate-800">{profile?.name || 'AutoBrief AI'}</strong></span>
                 </div>
 
                 {grant.externalUrl && (
@@ -240,246 +285,326 @@ export const ProposalCompiler: React.FC<ProposalCompilerProps> = ({
                     href={grant.externalUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center space-x-1 text-xs text-[#00DC82] hover:underline shrink-0"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-slate-950 underline underline-offset-4"
                   >
-                    <span>Official Portal</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Program Portal</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
                   </a>
                 )}
               </div>
-            </div>
 
-            {/* Section 1: Executive Summary */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center space-x-2">
-                  <span className="text-[#00DC82]">01.</span>
-                  <span>Executive Summary</span>
-                </h3>
-                <span className="text-xs text-[#00DC82] font-semibold flex items-center space-x-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Thesis Aligned</span>
-                </span>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-snug">
+                {title}
+              </h1>
+
+              {/* 4-Column Specification Metadata Table */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 border border-slate-200 rounded-lg divide-y sm:divide-y-0 sm:divide-x divide-slate-200 bg-slate-50/50">
+                <div className="p-3">
+                  <div className="text-[11px] text-slate-500 font-medium">Funding Pool</div>
+                  <div className="text-xs font-bold text-slate-900 font-code mt-0.5 truncate">{grant.pool}</div>
+                </div>
+                <div className="p-3">
+                  <div className="text-[11px] text-slate-500 font-medium">Submission Window</div>
+                  <div className="text-xs font-semibold text-slate-800 mt-0.5">{grant.deadline}</div>
+                </div>
+                <div className="p-3">
+                  <div className="text-[11px] text-slate-500 font-medium">Alignment Score</div>
+                  <div className="text-xs font-bold text-emerald-700 font-code mt-0.5">
+                    {grant.fitScore}/100 ({grant.fitGrade})
+                  </div>
+                </div>
+                <div className="p-3">
+                  <div className="text-[11px] text-slate-500 font-medium">Factor Breakdown</div>
+                  <div className="text-[11px] font-code text-slate-700 mt-0.5">
+                    {grant.fitBreakdown
+                      ? `T:${grant.fitBreakdown.techStackScore} E:${grant.fitBreakdown.ecosystemScore} M:${grant.fitBreakdown.milestoneScore}`
+                      : 'Verified Fit'}
+                  </div>
+                </div>
               </div>
-              <p className="text-sm sm:text-[14.5px] leading-relaxed text-slate-200 bg-[#0E121A] p-4 sm:p-5 rounded-2xl border border-white/[0.06]">
+            </header>
+
+            {/* Section: Executive Summary */}
+            <section className="pt-6 border-t border-slate-200/80 space-y-2">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Executive Summary
+              </h2>
+              <p className="text-[14.5px] leading-[1.7] text-slate-700">
                 {summary}
               </p>
-            </div>
+            </section>
 
-            {/* Section 2: Problem & Ecosystem Opportunity */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center space-x-2">
-                  <span className="text-[#00DC82]">02.</span>
-                  <span>Problem & Ecosystem Opportunity</span>
-                </h3>
-                <span className="text-xs text-[#00DC82] font-semibold flex items-center space-x-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Validated Friction</span>
-                </span>
+            {/* Section: Problem & Market Friction */}
+            <section className="pt-6 border-t border-slate-200/80 space-y-2.5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Problem Statement & Ecosystem Gap
+              </h2>
+              <div className="border-l-2 border-slate-900 pl-4 py-0.5">
+                <p className="text-[14.5px] leading-[1.7] text-slate-700">
+                  {problem}
+                </p>
               </div>
-              <p className="text-sm sm:text-[14.5px] leading-relaxed text-slate-200 bg-[#0E121A] p-4 sm:p-5 rounded-2xl border border-white/[0.06]">
-                {problem}
-              </p>
-            </div>
+            </section>
 
-            {/* Section 3: Technical Architecture */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center space-x-2">
-                  <span className="text-[#00DC82]">03.</span>
-                  <span>Technical Architecture & Innovation</span>
-                </h3>
-                <span className="text-xs text-cyan-400 font-semibold flex items-center space-x-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Zero Leakage</span>
-                </span>
+            {/* Section: Technical Architecture */}
+            <section className="pt-6 border-t border-slate-200/80 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Technical Architecture & Implementation
+                </h2>
+                {stackList.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {stackList.map((tech) => (
+                      <span
+                        key={tech}
+                        className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200/80 text-[11px] font-code font-medium"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-              <p className="text-sm sm:text-[14.5px] leading-relaxed text-slate-200 bg-[#0E121A] p-4 sm:p-5 rounded-2xl border border-white/[0.06]">
+              <p className="text-[14.5px] leading-[1.7] text-slate-700">
                 {architecture}
               </p>
-            </div>
+            </section>
 
-            {/* Section 4: Milestones & Deliverables */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center space-x-2">
-                  <span className="text-[#00DC82]">04.</span>
-                  <span>Milestones & Verifiable Deliverables</span>
-                </h3>
-                <span className="text-xs text-[#00DC82] font-semibold flex items-center space-x-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>3 Gates Defined</span>
-                </span>
-              </div>
-              <div className="space-y-2.5">
-                {milestones.map((m, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-xl bg-[#0E121A] border border-white/[0.06] flex items-start space-x-3.5 text-sm leading-relaxed text-slate-200"
-                  >
-                    <span className="w-6 h-6 rounded-lg bg-[#00DC82]/15 border border-[#00DC82]/30 text-[#00DC82] font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
-                      {idx + 1}
-                    </span>
-                    <span>{m}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Section: Delivery Milestones Table */}
+            <section className="pt-6 border-t border-slate-200/80 space-y-3">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Execution Roadmap & Deliverables
+              </h2>
 
-            {/* Section 5: Budget Allocation */}
-            <div className="space-y-2 pb-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center space-x-2">
-                  <span className="text-[#00DC82]">05.</span>
-                  <span>Itemized Budget Allocation</span>
-                </h3>
-                <span className="text-xs text-[#00DC82] font-semibold flex items-center space-x-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Matches {grant.pool}</span>
-                </span>
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <table className="w-full text-left border-collapse text-xs sm:text-[13.5px]">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                      <th className="py-2.5 px-4 w-44">Phase / Gate</th>
+                      <th className="py-2.5 px-4">Verifiable Deliverable</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200/80">
+                    {milestones.map((m, idx) => {
+                      const parsed = parseMilestone(m, idx);
+                      return (
+                        <tr key={idx} className="align-top">
+                          <td className="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap font-code text-xs">
+                            {parsed.phase}
+                          </td>
+                          <td className="py-3 px-4 text-slate-700 leading-relaxed">
+                            {parsed.deliverable}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-              <div className="bg-[#0E121A] p-4 sm:p-5 rounded-2xl border border-white/[0.06] text-sm text-slate-200 leading-relaxed font-mono">
-                {budget}
-              </div>
-            </div>
+            </section>
 
-          </div>
+            {/* Section: Structured Budget Breakdown Table */}
+            <section className="pt-6 border-t border-slate-200/80 space-y-3 pb-4">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Budget & Capital Allocation
+              </h2>
+
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <table className="w-full text-left border-collapse text-xs sm:text-[13.5px]">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                      <th className="py-2.5 px-4">Workstream / Cost Center</th>
+                      <th className="py-2.5 px-4 w-36 hidden sm:table-cell">Share</th>
+                      <th className="py-2.5 px-4 text-right w-32">Allocation</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200/80">
+                    {parsedBudget.rows.map((row, idx) => (
+                      <tr key={idx}>
+                        <td className="py-2.5 px-4 font-medium text-slate-800">
+                          {row.item}
+                        </td>
+                        <td className="py-2.5 px-4 hidden sm:table-cell">
+                          {row.percentage > 0 && (
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                                <div
+                                  className="h-full bg-slate-800 rounded-full"
+                                  style={{ width: `${row.percentage}%` }}
+                                />
+                              </div>
+                              <span className="text-[11px] font-code text-slate-500">
+                                {row.percentage}%
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-4 text-right font-code font-semibold text-slate-900">
+                          {row.amountFormatted}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-slate-50/90 border-t border-slate-200 font-semibold text-slate-900">
+                      <td className="py-2.5 px-4 text-xs uppercase tracking-wider text-slate-500">
+                        Total Requested Grant
+                      </td>
+                      <td className="py-2.5 px-4 hidden sm:table-cell font-code text-xs text-slate-500">
+                        100%
+                      </td>
+                      <td className="py-2.5 px-4 text-right font-code text-sm font-bold text-slate-900">
+                        {parsedBudget.totalFormatted}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </section>
+
+          </article>
         )}
 
-        {/* Tab 2: In-Place Editor */}
+        {/* TAB 2: IN-PLACE PROPOSAL EDITOR */}
         {activeTab === 'edit' && (
-          <div className="max-w-3xl mx-auto space-y-5 text-xs sm:text-sm">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+          <div className="max-w-[780px] mx-auto px-5 sm:px-10 py-7 space-y-5 text-xs sm:text-sm">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
               <div>
-                <h3 className="font-bold text-white text-base">In-Place Proposal Studio</h3>
-                <p className="text-xs text-slate-400">Edit sections directly to customize your submission draft.</p>
+                <h3 className="font-bold text-slate-900 text-base">Edit Proposal Specification</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Modify any section below before exporting markdown.</p>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleResetToAIDraft}
-                  className="px-3 py-1.5 rounded-xl bg-[#141924] hover:bg-[#1C2333] border border-white/[0.08] text-xs text-slate-300 hover:text-white transition flex items-center space-x-1"
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition flex items-center gap-1.5 cursor-pointer"
                 >
-                  <RotateCcw className="w-3 h-3 text-[#00DC82]" />
-                  <span>Re-Generate AI Draft</span>
+                  <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Reset Draft</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveInPlace}
-                  className="px-4 py-1.5 rounded-xl bg-[#00DC82] hover:bg-[#00c776] text-[#07090C] font-bold text-xs transition shadow-sm"
+                  className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition cursor-pointer"
                 >
-                  Save & Preview
+                  Done Editing
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Proposal Title</label>
+              <label className="block text-slate-700 font-semibold text-xs mb-1.5">Proposal Title</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#0E121A] border border-white/[0.08] text-white focus:outline-none focus:border-[#00DC82] text-sm"
+                className="w-full px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-slate-900 text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Executive Summary</label>
+              <label className="block text-slate-700 font-semibold text-xs mb-1.5">Executive Summary</label>
               <textarea
                 rows={3}
                 value={summary}
                 onChange={(e) => setSummary(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#0E121A] border border-white/[0.08] text-white focus:outline-none focus:border-[#00DC82] text-xs sm:text-sm leading-relaxed"
+                className="w-full px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-slate-900 text-sm leading-relaxed"
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Problem & Ecosystem Opportunity</label>
+              <label className="block text-slate-700 font-semibold text-xs mb-1.5">Problem Statement & Ecosystem Gap</label>
               <textarea
-                rows={4}
+                rows={3}
                 value={problem}
                 onChange={(e) => setProblem(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#0E121A] border border-white/[0.08] text-white focus:outline-none focus:border-[#00DC82] text-xs sm:text-sm leading-relaxed"
+                className="w-full px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-slate-900 text-sm leading-relaxed"
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Technical Architecture</label>
+              <label className="block text-slate-700 font-semibold text-xs mb-1.5">Technical Architecture</label>
               <textarea
-                rows={4}
+                rows={3}
                 value={architecture}
                 onChange={(e) => setArchitecture(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#0E121A] border border-white/[0.08] text-white focus:outline-none focus:border-[#00DC82] text-xs sm:text-sm leading-relaxed"
+                className="w-full px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-slate-900 text-sm leading-relaxed"
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1.5">Itemized Budget Allocation</label>
+              <label className="block text-slate-700 font-semibold text-xs mb-1.5">
+                Budget Line Items (separate items with &ldquo;•&rdquo;)
+              </label>
               <input
                 type="text"
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#0E121A] border border-white/[0.08] text-white focus:outline-none focus:border-[#00DC82] text-xs sm:text-sm"
+                className="w-full px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-slate-900 text-sm font-code"
               />
             </div>
           </div>
         )}
 
-        {/* Tab 3: Dynamic Red-Team Jury Audit Rubric */}
+        {/* TAB 3: RUBRIC EVALUATION TABLE */}
         {activeTab === 'audit' && auditReport && (
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="max-w-[780px] mx-auto px-5 sm:px-10 py-7 space-y-6">
             
-            {/* Top Score Banner */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-[#0E121A] border border-white/[0.08] space-y-2 relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <span className="text-xs uppercase font-bold tracking-wider text-slate-400 flex items-center space-x-1.5">
-                  <ShieldCheck className="w-4 h-4 text-[#00DC82]" />
-                  <span>DoraHacks 2026 Red-Team Scoring Audit</span>
+            {/* Top Summary Box */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Pre-Submission Reviewer Rubric
                 </span>
-                <span className="font-extrabold text-[#00DC82] text-base sm:text-lg">
-                  {auditReport.overallScore} / {auditReport.maxPossibleScore} • Grade {auditReport.grade}
-                </span>
+                <h3 className="text-lg font-bold text-slate-900 mt-0.5">
+                  Readiness Score: {auditReport.overallScore}/{auditReport.maxPossibleScore} (Grade {auditReport.grade})
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                  {auditReport.verdict}
+                </p>
               </div>
-              <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-                {auditReport.verdict}
-              </p>
             </div>
 
-            {/* Rubrics breakdown */}
-            <div className="space-y-3">
-              {auditReport.rubrics.map((rubric) => (
-                <div
-                  key={rubric.id}
-                  className="p-4 sm:p-5 rounded-2xl bg-[#0E121A] border border-white/[0.06] space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-bold text-white text-sm">{rubric.category}</h4>
-                    <span className="font-mono font-bold text-[#00DC82] text-sm sm:text-base shrink-0">
-                      {rubric.assignedScore} / {rubric.maxScore}
-                    </span>
-                  </div>
-                  <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-                    {rubric.strengths}
-                  </p>
-                  <div className="pt-2 border-t border-white/[0.04] text-[11px] text-cyan-300 flex items-start space-x-1.5">
-                    <TrendingUp className="w-3.5 h-3.5 shrink-0 mt-0.5 text-cyan-400" />
-                    <span><strong>Jury Tip:</strong> {rubric.recommendation}</span>
-                  </div>
-                </div>
-              ))}
+            {/* Structured Rubric Table */}
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <table className="w-full text-left border-collapse text-xs sm:text-[13px]">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    <th className="py-2.5 px-4 w-48">Criterion</th>
+                    <th className="py-2.5 px-4">Assessment & Actionable Improvement</th>
+                    <th className="py-2.5 px-4 text-right w-24">Score</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {auditReport.rubrics.map((rubric) => (
+                    <tr key={rubric.id} className="align-top">
+                      <td className="py-3.5 px-4 font-semibold text-slate-900">
+                        {rubric.category}
+                      </td>
+                      <td className="py-3.5 px-4 space-y-1.5">
+                        <p className="text-slate-700 leading-relaxed">{rubric.strengths}</p>
+                        <p className="text-xs text-slate-500">
+                          <strong className="text-slate-700">Recommendation:</strong> {rubric.recommendation}
+                        </p>
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-code font-bold text-slate-900 whitespace-nowrap">
+                        {rubric.assignedScore}/{rubric.maxScore}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            {/* Actionable recommendations */}
-            <div className="p-5 rounded-2xl bg-[#141924] border border-white/[0.08] space-y-2.5">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#00DC82] flex items-center space-x-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Critical Pre-Submit Checkpoints</span>
+            {/* Pre-Submit Checklist */}
+            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                Final Submission Checklist
               </h4>
-              <ul className="space-y-1.5 text-xs text-slate-300">
+              <ul className="space-y-1.5 text-xs text-slate-700">
                 {auditReport.criticalImprovements.map((item, idx) => (
-                  <li key={idx} className="flex items-start space-x-2">
-                    <span className="text-[#00DC82] font-bold">•</span>
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="text-slate-400 font-bold">•</span>
                     <span>{item}</span>
                   </li>
                 ))}
